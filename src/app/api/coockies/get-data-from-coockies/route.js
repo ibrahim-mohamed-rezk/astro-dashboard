@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
-export async function POST(request: Request) {
+export async function POST(request) {
   try {
     const data = await request.json();
     const { key } = data;

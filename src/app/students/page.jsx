@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { AxiosHeaders } from "axios";
 import StudentModal from "./components/StudntModal";
 import { getData } from "@/libs/axios/server";
 import StudentsTable from "./components/StudentsTable";
@@ -19,12 +17,15 @@ export default function StudentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [pagination, setPagination] = useState({ page: 1 });
   const [currentPage, setCurrentPage] = useState(1);
-  const router = useRouter();
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await getData("students", { page: currentPage, limit: 15 }, {});
+      const response = await getData(
+        "students",
+        { page: currentPage, limit: 15 },
+        {}
+      );
       setStudents(response.data);
       setPagination(response.pagination);
     } catch (error) {
@@ -50,51 +51,9 @@ export default function StudentsPage() {
     setIsModalOpen(true);
   };
 
-  const handleViewStudent = (studentId) => {
-    router.push(`/students/${studentId}`);
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
   };
-
-  const handleDeleteStudent = async (studentId) => {
-    if (window.confirm("Are you sure you want to delete this student?")) {
-      try {
-        // Add your delete API call here
-        setStudents((prev) => prev.filter((s) => s._id !== studentId));
-      } catch (error) {
-        console.error("Error deleting student:", error);
-      }
-    }
-  };
-
-  const handleSaveStudent = async (studentData) => {
-    try {
-      if (editingStudent) {
-        // Update existing student
-        setStudents((prev) =>
-          prev.map((s) =>
-            s._id === editingStudent._id ? { ...s, ...studentData } : s
-          )
-        );
-      } else {
-        // Add new student
-        const newStudent = {
-          ...studentData,
-          _id: Date.now().toString(),
-          studentCode: `#${Math.random().toString(36).substr(2, 6)}`,
-          ratings: [],
-          createdAt: new Date().toISOString(),
-        };
-        setStudents((prev) => [newStudent, ...prev]);
-      }
-      setIsModalOpen(false);
-      setEditingStudent(null);
-    } catch (error) {
-      console.error("Error saving student:", error);
-    }
-    };
-    
-    const handlePageChange = (page) => {
-      setCurrentPage(page);
-    };
 
   if (loading) {
     return (
@@ -176,8 +135,7 @@ export default function StudentsPage() {
         <StudentsTable
           students={students}
           onEdit={handleEditStudent}
-          onDelete={handleDeleteStudent}
-          onView={handleViewStudent}
+          feachData={fetchData}
         />
       ) : (
         <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
@@ -227,7 +185,11 @@ export default function StudentsPage() {
           setEditingStudent(null);
         }}
         student={editingStudent}
-        onSave={handleSaveStudent}
+        editingStudent={editingStudent}
+        setEditingStudent={setEditingStudent}
+        setIsModalOpen={setIsModalOpen}
+        fetchData={fetchData}
+        studentId={editingStudent?._id}
       />
     </div>
   );

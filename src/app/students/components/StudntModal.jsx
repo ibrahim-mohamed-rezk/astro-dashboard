@@ -1,13 +1,24 @@
-import { useEffect, useState } from "react";
+import { postData, putData } from "@/libs/axios/server";
+import { useEffect, useState, useRef } from "react";
 
-const StudentModal = ({ isOpen, onClose, student, onSave }) => {
+const StudentModal = ({
+  isOpen,
+  onClose,
+  student,
+  editingStudent,
+  setEditingStudent,
+  setIsModalOpen,
+  fetchData,
+  studentId,
+}) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     photo: "",
-    badges: [],
   });
+  const [photoPreview, setPhotoPreview] = useState("");
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (student) {
@@ -16,38 +27,77 @@ const StudentModal = ({ isOpen, onClose, student, onSave }) => {
         email: student.email || "",
         phone: student.phone || "",
         photo: student.photo || "",
-        badges: student.badges || [],
       });
+      setPhotoPreview(student.photo || "");
     } else {
       setFormData({
         name: "",
         email: "",
         phone: "",
         photo: "",
-        badges: [],
       });
+      setPhotoPreview("");
     }
   }, [student, isOpen]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  const handleBadgeAdd = (badge) => {
-    if (badge.trim() && !formData.badges.includes(badge.trim())) {
-      setFormData((prev) => ({
-        ...prev,
-        badges: [...prev.badges, badge.trim()],
-      }));
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({ ...prev, photo: reader.result }));
+        setPhotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleBadgeRemove = (badgeToRemove) => {
-    setFormData((prev) => ({
-      ...prev,
-      badges: prev.badges.filter((badge) => badge !== badgeToRemove),
-    }));
+  const handleRemovePhoto = () => {
+    setFormData((prev) => ({ ...prev, photo: "" }));
+    setPhotoPreview("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (editingStudent) {
+      try {
+        await putData(`students/${studentId}`, formData, {
+          Authorization: `Bearer token`,
+          "Content-Type": "multipart/form-data",
+        });
+
+        setIsModalOpen(false);
+        setEditingStudent(null);
+        fetchData();
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          toast.error(error.response?.data?.msg || "An error occurred");
+        } else {
+          toast.error("An unexpected error occurred");
+        }
+        throw error;
+      }
+    } else {
+      try {
+        await postData("students", formData, {
+          Authorization: `Bearer token`,
+          "Content-Type": "multipart/form-data",
+        });
+
+        setIsModalOpen(false);
+        setEditingStudent(null);
+        fetchData();
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          toast.error(error.response?.data?.msg || "An error occurred");
+        } else {
+          toast.error("An unexpected error occurred");
+        }
+        throw error;
+      }
+    }
   };
 
   if (!isOpen) return null;
@@ -61,7 +111,7 @@ const StudentModal = ({ isOpen, onClose, student, onSave }) => {
           </h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <div className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Full Name
@@ -112,52 +162,79 @@ const StudentModal = ({ isOpen, onClose, student, onSave }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Photo URL
+              Photo
             </label>
-            <input
-              type="url"
-              value={formData.photo}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, photo: e.target.value }))
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0072FF] focus:border-transparent"
-              placeholder="Enter photo URL"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Badges
-            </label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {formData.badges.map((badge, index) => (
-                <span
-                  key={index}
-                  className="inline-flex items-center px-3 py-1 text-sm bg-[#0072FF] text-white rounded-full"
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <div
+                  className="w-20 h-20 rounded-full bg-gray-100 border-2 border-gray-200 flex items-center justify-center overflow-hidden shadow-sm"
+                  style={{ minWidth: "5rem", minHeight: "5rem" }}
                 >
-                  {badge}
-                  <button
-                    type="button"
-                    onClick={() => handleBadgeRemove(badge)}
-                    className="ml-2 text-white hover:text-gray-200"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
+                  {photoPreview ? (
+                    <img
+                      src={photoPreview}
+                      alt="Student"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <svg
+                      className="w-10 h-10 text-gray-300"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4a4 4 0 014 4v1h1a2 2 0 012 2v7a2 2 0 01-2 2H7a2 2 0 01-2-2v-7a2 2 0 012-2h1V8a4 4 0 014-4z"
+                      />
+                    </svg>
+                  )}
+                  {photoPreview && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      className="absolute -top-2 -right-2 bg-white border border-gray-300 rounded-full p-1 shadow hover:bg-gray-100 transition"
+                      title="Remove photo"
+                    >
+                      <svg
+                        className="w-4 h-4 text-gray-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                  id="photo-upload"
+                />
+                <label
+                  htmlFor="photo-upload"
+                  className="inline-block px-4 py-2 bg-gradient-to-r from-[#0072FF] to-[#0C79FF] text-white rounded-md cursor-pointer hover:from-[#0061CC] hover:to-[#0B69CC] transition-all text-sm font-medium"
+                >
+                  {photoPreview ? "Change Photo" : "Upload Photo"}
+                </label>
+                <div className="text-xs text-gray-400 mt-1">
+                  JPG, PNG, or GIF. Max 2MB.
+                </div>
+              </div>
             </div>
-            <input
-              type="text"
-              onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleBadgeAdd(e.target.value);
-                  e.target.value = "";
-                }
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0072FF] focus:border-transparent"
-              placeholder="Type badge name and press Enter"
-            />
           </div>
 
           <div className="flex space-x-3 pt-4">
@@ -169,13 +246,13 @@ const StudentModal = ({ isOpen, onClose, student, onSave }) => {
               Cancel
             </button>
             <button
-              type="submit"
+              onClick={handleSubmit}
               className="flex-1 px-4 py-2 bg-gradient-to-r from-[#0072FF] to-[#0C79FF] text-white rounded-md hover:from-[#0061CC] hover:to-[#0B69CC] transition-all"
             >
               {student ? "Update" : "Create"} Student
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

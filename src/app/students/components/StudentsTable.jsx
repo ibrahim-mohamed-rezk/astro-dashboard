@@ -1,4 +1,6 @@
-const StudentsTable = ({ students, onEdit, onDelete, onView }) => {
+import { deleteData } from "@/libs/axios/server";
+
+const StudentsTable = ({ students, onEdit, feachData }) => {
   const getAverageRating = (ratings) => {
     if (!ratings || ratings.length === 0) return "N/A";
     const avg =
@@ -12,6 +14,28 @@ const StudentsTable = ({ students, onEdit, onDelete, onView }) => {
       month: "short",
       day: "numeric",
     });
+  };
+
+  const deleteStudent = async (id) => {
+    try {
+      await deleteData(
+        `/students/${id}`,
+        {},
+        {
+          Authorization: `Bearer token`,
+          "Content-Type": "multipart/form-data",
+        }
+      );
+
+      feachData();
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.msg || "An error occurred");
+      } else {
+        toast.error("An unexpected error occurred");
+      }
+      throw error;
+    }
   };
 
   return (
@@ -135,7 +159,7 @@ const StudentsTable = ({ students, onEdit, onDelete, onView }) => {
                       </svg>
                     </button>
                     <button
-                      onClick={() => onDelete(student._id)}
+                      onClick={() => deleteStudent(student._id)}
                       className="p-2 text-red-500 hover:bg-red-50 rounded-md transition-colors"
                       title="Delete Student"
                     >

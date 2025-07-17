@@ -40,6 +40,33 @@ function Sidebar({ isOpen, closeSidebar }) {
         </svg>
       ),
     },
+    {
+      label: "Badges",
+      href: "/badges",
+      icon: (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="#B3D1FF"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M17 17v-4a2 2 0 00-2-2h-2V7a2 2 0 10-4 0v4H7a2 2 0 00-2 2v4l7 4 7-4z"
+          />
+          <circle
+            cx="12"
+            cy="9"
+            r="2"
+            stroke="#B3D1FF"
+            strokeWidth={2}
+            fill="none"
+          />
+        </svg>
+      ),
+    },
     // {
     //   label: "Settings",
     //   href: "/settings",

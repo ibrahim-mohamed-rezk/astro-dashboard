@@ -1,34 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
+export async function POST(request) {
   try {
     const body = await request.json();
     const { token, user, remember } = body;
-    
+
     if (!token) {
       return NextResponse.json(
         { error: "Authentication token is required" },
         { status: 400 }
       );
     }
-    
-    const response = NextResponse.json({ 
+
+    const response = NextResponse.json({
       success: true,
-      message: "Authentication successful" 
+      message: "Authentication successful",
     });
 
     // Common cookie options
-    const cookieOptions: {
-      httpOnly: boolean;
-      secure: boolean;
-      sameSite: "strict" | "lax" | "none";
-      maxAge?: number;
-      path: string;
-    } = {
+    const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      path: "/"
+      path: "/",
     };
 
     // Add maxAge only if remember is true
@@ -43,7 +37,7 @@ export async function POST(request: NextRequest) {
       // For the user cookie, we don't need httpOnly to allow client-side access
       const userCookieOptions = {
         ...cookieOptions,
-        httpOnly: false
+        httpOnly: false,
       };
 
       response.cookies.set("user", user, userCookieOptions);

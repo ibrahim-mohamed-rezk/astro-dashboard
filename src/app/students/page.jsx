@@ -17,13 +17,19 @@ export default function StudentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [pagination, setPagination] = useState({ page: 1 });
   const [currentPage, setCurrentPage] = useState(1);
+  const [filters, setFilters] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    studentCode: "",
+  });
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const response = await getData(
-        "students",
-        { page: currentPage, limit: 15 },
+        "students/filters",
+        { page: currentPage, limit: 15, ...filters },
         {}
       );
       setStudents(response.data);
@@ -38,7 +44,7 @@ export default function StudentsPage() {
 
   useEffect(() => {
     fetchData();
-  }, [currentPage]);
+  }, [currentPage, filters]);
 
   // Handle student actions
   const handleAddStudent = () => {
@@ -55,14 +61,6 @@ export default function StudentsPage() {
     setCurrentPage(page);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0072FF]"></div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="text-center py-12">
@@ -77,6 +75,8 @@ export default function StudentsPage() {
     );
   }
 
+  console.log(filters);
+
   return (
     <div className="space-y-6 p-2">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -90,8 +90,21 @@ export default function StudentsPage() {
             <input
               type="text"
               placeholder="Search students by name, email, or code..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={
+                filters.name ||
+                filters.email ||
+                filters.phone ||
+                filters.studentCode
+              }
+              onChange={(e) =>
+                setFilters({
+                  ...filters,
+                  name: e.target.value,
+                  email: e.target.value,
+                  phone: e.target.value,
+                  studentCode: e.target.value,
+                })
+              }
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0072FF] focus:border-transparent"
             />
             <svg
@@ -131,7 +144,11 @@ export default function StudentsPage() {
       </div>
 
       {/* Students Table */}
-      {students?.length > 0 ? (
+      {loading ? (
+        <div className="flex items-center justify-center min-h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0072FF]"></div>
+        </div>
+      ) : students?.length > 0 ? (
         <StudentsTable
           students={students}
           onEdit={handleEditStudent}

@@ -45,7 +45,7 @@ const StudentModal = ({
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, photo: reader.result }));
+        setFormData((prev) => ({ ...prev, photo: file }));
         setPhotoPreview(reader.result);
       };
       reader.readAsDataURL(file);

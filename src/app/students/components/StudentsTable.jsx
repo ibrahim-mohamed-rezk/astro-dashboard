@@ -1,12 +1,8 @@
 import { deleteData } from "@/libs/axios/server";
+import { useRouter } from "next/navigation";
 
 const StudentsTable = ({ students, onEdit, feachData }) => {
-  const getAverageRating = (ratings) => {
-    if (!ratings || ratings.length === 0) return "N/A";
-    const avg =
-      ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
-    return avg.toFixed(1);
-  };
+  const router = useRouter();
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -60,12 +56,6 @@ const StudentsTable = ({ students, onEdit, feachData }) => {
                 Phone
               </th>
               <th className="px-6 py-4 text-left text-sm font-semibold">
-                Badges
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold">
-                Rating
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold">
                 Created
               </th>
               <th className="px-6 py-4 text-center text-sm font-semibold">
@@ -74,11 +64,11 @@ const StudentsTable = ({ students, onEdit, feachData }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {students.map((student, index) => (
+            {students.map((student) => (
               <tr
                 key={student._id}
                 className="hover:bg-gray-50 transition-colors cursor-pointer"
-                onClick={() => onView(student._id)}
+                onClick={() => router.push(`/students/${student._id}`)}
               >
                 <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                   <img
@@ -107,30 +97,6 @@ const StudentsTable = ({ students, onEdit, feachData }) => {
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-gray-600">{student.phone}</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex flex-wrap gap-1">
-                    {student.badges.length > 0 ? (
-                      student.badges.map((badge, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-block px-2 py-1 text-xs font-medium bg-[#0072FF] text-white rounded-full"
-                        >
-                          {badge}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-gray-400 text-sm">No badges</span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center">
-                    <span className="text-yellow-500 mr-1">★</span>
-                    <span className="font-medium">
-                      {getAverageRating(student.ratings)}
-                    </span>
-                  </div>
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-gray-600 text-sm">

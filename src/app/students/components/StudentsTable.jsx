@@ -1,5 +1,6 @@
 import { deleteData } from "@/libs/axios/server";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 const StudentsTable = ({ students, onEdit, feachData }) => {
   const router = useRouter();
@@ -23,6 +24,7 @@ const StudentsTable = ({ students, onEdit, feachData }) => {
         }
       );
 
+      toast.success("Student deleted successfully");
       feachData();
     } catch (error) {
       if (axios.isAxiosError(error)) {

@@ -1,5 +1,6 @@
 import { postData, putData } from "@/libs/axios/server";
 import { useEffect, useState, useRef } from "react";
+import toast from "react-hot-toast";
 
 const StudentModal = ({
   isOpen,
@@ -70,14 +71,10 @@ const StudentModal = ({
 
         setIsModalOpen(false);
         setEditingStudent(null);
+        toast.success("Student updated successfully");
         fetchData();
       } catch (error) {
-        if (axios.isAxiosError(error)) {
-          toast.error(error.response?.data?.msg || "An error occurred");
-        } else {
-          toast.error("An unexpected error occurred");
-        }
-        throw error;
+        toast.error(error.response.data.message);
       }
     } else {
       try {
@@ -88,14 +85,10 @@ const StudentModal = ({
 
         setIsModalOpen(false);
         setEditingStudent(null);
+        toast.success("Student added successfully");
         fetchData();
       } catch (error) {
-        if (axios.isAxiosError(error)) {
-          toast.error(error.response?.data?.msg || "An error occurred");
-        } else {
-          toast.error("An unexpected error occurred");
-        }
-        throw error;
+        toast.error(error.response.data.message);
       }
     }
   };
@@ -103,7 +96,7 @@ const StudentModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-[#00000063] bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="bg-gradient-to-r from-[#0072FF] to-[#0C79FF] text-white p-6 rounded-t-lg">
           <h2 className="text-xl font-semibold">

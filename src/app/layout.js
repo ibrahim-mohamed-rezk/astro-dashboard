@@ -1,5 +1,6 @@
 import Layout from "@/components/layout/Layout";
 import "./globals.css";
+import ToasterProvider from "@/components/providers/ToasterProvider";
 
 export const metadata = {
   title: "Astro",
@@ -19,6 +20,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="min-h-screen bg-gray-50">
         <Layout>{children}</Layout>
+        <ToasterProvider />
       </body>
     </html>
   );

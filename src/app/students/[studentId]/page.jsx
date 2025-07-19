@@ -13,11 +13,13 @@ import {
   Phone,
   Hash,
 } from "lucide-react";
-import { getData, postData } from "@/libs/axios/server";
+import { deleteData, getData, postData, putData } from "@/libs/axios/server";
+import toast from "react-hot-toast";
 
 const StudentControlPanel = () => {
   const params = useParams();
   const studentId = params.studentId;
+  const [badges, setBadges] = useState([]);
 
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -30,9 +32,7 @@ const StudentControlPanel = () => {
 
   // Form states
   const [badgeForm, setBadgeForm] = useState({
-    title: "",
-    description: "",
-    image: "",
+    badgeId: "",
   });
   const [ratingForm, setRatingForm] = useState({
     week: 1,
@@ -55,34 +55,61 @@ const StudentControlPanel = () => {
     }
   };
 
+  const fetchBadges = async () => {
+    try {
+      setLoading(true);
+      const response = await getData(`badges`, {}, {});
+      setBadges(response.data);
+    } catch (error) {
+      setError("Failed to fetch student data");
+      console.error("Error fetching student:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (studentId) {
       fetchData();
+      fetchBadges();
     }
   }, [studentId]);
 
   // Badge CRUD operations
   const addBadge = async () => {
     try {
-      // API call to add badge
-      console.log("Adding badge:", badgeForm);
-      // After successful addition, refresh data
+      await postData(`students/${studentId}/badges`, badgeForm, {
+        Authorization: `Bearer token`,
+        "Content-Type": "application/json",
+      });
+
+      toast.success("Badge added successfully");
       await fetchData();
       setShowAddBadge(false);
-      setBadgeForm({ title: "", description: "", image: "" });
+      setBadgeForm({ badgeId: "" });
     } catch (error) {
-      console.error("Error adding badge:", error);
+      toast.error(error.response.data.message);
     }
   };
 
   const deleteBadge = async (badgeId) => {
     if (window.confirm("Are you sure you want to remove this badge?")) {
       try {
-        // API call to delete badge
-        console.log("Deleting badge:", badgeId);
+        await deleteData(
+          `students/${studentId}/badges/${badgeId}`,
+          {},
+          {
+            Authorization: `Bearer token`,
+            "Content-Type": "application/json",
+          }
+        );
+
+        toast.success("Badge removed successfully");
         await fetchData();
+        setShowAddBadge(false);
+        setBadgeForm({ badgeId: "" });
       } catch (error) {
-        console.error("Error deleting badge:", error);
+        toast.error(error.response.data.message);
       }
     }
   };
@@ -95,6 +122,7 @@ const StudentControlPanel = () => {
         "Content-Type": "application/json",
       });
 
+      toast.success("Rating added successfully");
       fetchData();
       setShowAddRating(false);
       setRatingForm({
@@ -105,34 +133,51 @@ const StudentControlPanel = () => {
         performance: 0,
       });
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.msg || "An error occurred");
-      } else {
-        toast.error("An unexpected error occurred");
-      }
-      throw error;
+      toast.error(error.response.data.message);
     }
   };
 
-  const updateRating = async () => {
+  const updateRating = async (ratingId) => {
     try {
-      // API call to update rating
-      console.log("Updating rating:", editingRating._id, ratingForm);
-      await fetchData();
+      await putData(`students/${studentId}/ratings/${ratingId}`, ratingForm, {
+        Authorization: `Bearer token`,
+        "Content-Type": "application/json",
+      });
+
+      toast.success("Rating added successfully");
+      fetchData();
+      setShowAddRating(false);
       setEditingRating(null);
+      setRatingForm({
+        week: 1,
+        day: 1,
+        assignments: 0,
+        participation: 0,
+        performance: 0,
+      });
     } catch (error) {
-      console.error("Error updating rating:", error);
+      toast.error(error.response.data.message);
     }
   };
 
   const deleteRating = async (ratingId) => {
     if (window.confirm("Are you sure you want to delete this rating?")) {
       try {
-        // API call to delete rating
-        console.log("Deleting rating:", ratingId);
+        await deleteData(
+          `students/${studentId}/ratings/${ratingId}`,
+          {},
+          {
+            Authorization: `Bearer token`,
+            "Content-Type": "application/json",
+          }
+        );
+
+        toast.success("rating removed successfully");
         await fetchData();
+        setShowAddBadge(false);
+        setBadgeForm({ badgeId: "" });
       } catch (error) {
-        console.error("Error deleting rating:", error);
+        toast.error(error.response.data.message);
       }
     }
   };
@@ -328,7 +373,7 @@ const StudentControlPanel = () => {
 
       {/* Add Badge Modal */}
       {showAddBadge && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-[#00000063] bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-800">Add New Badge</h3>
@@ -343,47 +388,24 @@ const StudentControlPanel = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Title
+                  choose bagde
                 </label>
-                <input
-                  type="text"
-                  value={badgeForm.title}
-                  onChange={(e) =>
-                    setBadgeForm({ ...badgeForm, title: e.target.value })
-                  }
+                <select
+                  id="badge"
+                  name="badge"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                  style={{ focusRingColor: "#0072FF" }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={badgeForm.description}
-                  onChange={(e) =>
-                    setBadgeForm({ ...badgeForm, description: e.target.value })
-                  }
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                  style={{ focusRingColor: "#0072FF" }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Image URL
-                </label>
-                <input
-                  type="text"
-                  value={badgeForm.image}
-                  onChange={(e) =>
-                    setBadgeForm({ ...badgeForm, image: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                  style={{ focusRingColor: "#0072FF" }}
-                />
+                  onChangeCapture={(e) => {
+                    setBadgeForm({ badgeId: e.target.value });
+                  }}
+                  value={badgeForm.badgeId}
+                >
+                  <option value="">Select a badge</option>
+                  {badges.map((badge) => (
+                    <option key={badge._id} value={badge._id}>
+                      {badge.title}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <button
@@ -400,7 +422,7 @@ const StudentControlPanel = () => {
 
       {/* Add/Edit Rating Modal */}
       {(showAddRating || editingRating) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-[#00000063] bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-800">
@@ -520,7 +542,11 @@ const StudentControlPanel = () => {
               </div>
 
               <button
-                onClick={editingRating ? updateRating : addRating}
+                onClick={
+                  editingRating
+                    ? () => updateRating(editingRating._id)
+                    : addRating
+                }
                 className="w-full py-3 rounded-lg text-white font-medium transition-all hover:shadow-lg"
                 style={{ backgroundColor: "#0072FF" }}
               >

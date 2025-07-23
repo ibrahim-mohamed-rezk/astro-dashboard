@@ -1,4 +1,4 @@
-import { deleteData } from "@/libs/axios/server";
+import { deleteData } from "../../../libs/axios/server";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 

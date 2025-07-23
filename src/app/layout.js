@@ -1,6 +1,6 @@
-import Layout from "@/components/layout/Layout";
+import Layout from "../components/layout/Layout";
 import "./globals.css";
-import ToasterProvider from "@/components/providers/ToasterProvider";
+import ToasterProvider from "../components/providers/ToasterProvider";
 
 export const metadata = {
   title: "Astro",

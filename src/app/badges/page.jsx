@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Plus, Trash2, Award, Upload, X } from "lucide-react";
-import { deleteData, getData, postData } from "@/libs/axios/server";
-import Pagination from "@/components/ui/Pagination";
+import { deleteData, getData, postData } from "../../libs/axios/server";
+import Pagination from "../../components/ui/Pagination";
 import axios from "axios";
 
 const BadgesManager = () => {

@@ -1,4 +1,4 @@
-import { postData, putData } from "@/libs/axios/server";
+import { postData, putData } from "../../../libs/axios/server";
 import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 

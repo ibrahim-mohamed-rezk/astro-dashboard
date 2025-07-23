@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import StudentModal from "./components/StudntModal";
-import { getData } from "@/libs/axios/server";
+import { getData } from "../../libs/axios/server";
 import StudentsTable from "./components/StudentsTable";
-import Pagination from "@/components/ui/Pagination";
+import Pagination from "../../components/ui/Pagination";
 
 // Students Table Component
 

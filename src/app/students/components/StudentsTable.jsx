@@ -43,7 +43,7 @@ const StudentsTable = ({ students, onEdit, feachData }) => {
           <thead className="bg-gradient-to-r from-[#0072FF] to-[#0C79FF] text-white">
             <tr>
               <th className="px-6 py-4 text-left text-sm font-semibold">
-                Photo
+                image
               </th>
               <th className="px-6 py-4 text-left text-sm font-semibold">
                 Student Code
@@ -74,7 +74,7 @@ const StudentsTable = ({ students, onEdit, feachData }) => {
               >
                 <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                   <img
-                    src={student.photo}
+                    src={student.Image}
                     alt={student.name}
                     className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
                     onError={(e) => {

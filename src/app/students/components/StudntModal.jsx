@@ -1,254 +1,204 @@
+// components/StudentModal.jsx
+"use client";
+import { useEffect } from "react";
+import React, { useState } from "react";
+import useUploadImage from "../hooks/useUploadImage";
 import { postData, putData } from "../../../libs/axios/server";
-import { useEffect, useState, useRef } from "react";
-import toast from "react-hot-toast";
 
-const StudentModal = ({
-  isOpen,
-  onClose,
-  student,
-  editingStudent,
-  setEditingStudent,
-  setIsModalOpen,
-  fetchData,
-  studentId,
-}) => {
+export default function StudentModal({ isOpen, onClose, student, fetchData }) {
+  const isEditing = !!student;
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
-    photo: "",
+    Image: "",
   });
-  const [photoPreview, setPhotoPreview] = useState("");
-  const fileInputRef = useRef(null);
 
+  // Update form data when student prop changes 
   useEffect(() => {
     if (student) {
       setFormData({
         name: student.name || "",
         email: student.email || "",
         phone: student.phone || "",
-        photo: student.photo || "",
+        Image: student.Image || "",
       });
-      setPhotoPreview(student.photo || "");
     } else {
+      // Reset form for new student
       setFormData({
         name: "",
         email: "",
         phone: "",
-        photo: "",
+        Image: "",
       });
-      setPhotoPreview("");
     }
-  }, [student, isOpen]);
+  }, [student]);
 
-  const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, photo: file }));
-        setPhotoPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  const {
+    uploading,
+    imageUrl,
+    error: uploadError,
+    uploadImage,
+    setImageUrl,
+  } = useUploadImage();
 
-  const handleRemovePhoto = () => {
-    setFormData((prev) => ({ ...prev, photo: "" }));
-    setPhotoPreview("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async () => {
-    if (editingStudent) {
-      try {
-        await putData(`students/${studentId}`, formData, {
-          Authorization: `Bearer token`,
-          "Content-Type": "multipart/form-data",
-        });
-
-        setIsModalOpen(false);
-        setEditingStudent(null);
-        toast.success("Student updated successfully");
-        fetchData();
-      } catch (error) {
-        toast.error(error.response.data.message);
+  React.useEffect(() => {
+    if (student?.Image) {
+      // Only set if it's a valid Firebase URL (optional safety)
+      if (student.Image.includes("firebasestorage.googleapis.com")) {
+        setImageUrl(student.Image);
+      } else {
+        console.warn("External image URL detected. Not loading:", student.Image);
+        setImageUrl("");
       }
     } else {
-      try {
-        await postData("students", formData, {
-          Authorization: `Bearer token`,
-          "Content-Type": "multipart/form-data",
-        });
+      setImageUrl("");
+    }
+  }, [student, setImageUrl]);
 
-        setIsModalOpen(false);
-        setEditingStudent(null);
-        toast.success("Student added successfully");
-        fetchData();
-      } catch (error) {
-        toast.error(error.response.data.message);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await uploadImage(file);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!formData?.name?.trim()) return alert("Name is required.");
+    if (!formData?.email?.includes("@")) return alert("Valid email is required.");
+    if (!formData?.phone?.trim()) return alert("Phone is required.");
+
+    setSubmitting(true);
+
+    const payload = {
+      ...formData,
+      Image: imageUrl || "", // Use Firebase URL or empty
+    };
+
+    console.log("Submitting student:", payload); // 🔍 Debug
+
+    try {
+      if (isEditing) {
+        await putData(`/students/${student._id}`, payload);
+      } else {
+        await postData("/students", payload);
       }
+      fetchData();
+      onClose();
+    } catch (err) {
+      console.error("Save failed:", err);
+      alert("Failed to save student. Check console for details.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-[#00000063] bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="bg-gradient-to-r from-[#0072FF] to-[#0C79FF] text-white p-6 rounded-t-lg">
-          <h2 className="text-xl font-semibold">
-            {student ? "Edit Student" : "Add New Student"}
-          </h2>
-        </div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-screen overflow-y-auto">
+        <h2 className="text-xl font-bold mb-6">
+          {isEditing ? "Edit Student" : "Add New Student"}
+        </h2>
 
-        <div className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Image Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Full Name
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Profile Photo
             </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              disabled={uploading}
+              className="block w-full text-sm text-gray-500 
+                file:mr-4 file:py-2 file:px-4 file:rounded-full 
+                file:border-0 file:text-sm file:font-semibold 
+                file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+            {uploading && <p className="text-blue-500 text-sm mt-1">Uploading image...</p>}
+            {uploadError && <p className="text-red-500 text-sm mt-1">{uploadError}</p>}
+            {imageUrl && (
+              <div className="mt-2">
+                <img
+                  src={imageUrl}
+                  alt="Profile"
+                  className="w-20 h-20 object-cover rounded-full border"
+                />
+                <p className="text-xs text-green-600 mt-1">Uploaded successfully ✅</p>
+              </div>
+            )}
+          </div>
+
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Name</label>
             <input
               type="text"
+              name="name"
+              value={formData?.name || ""}
+              onChange={handleChange}
               required
-              value={formData.name}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, name: e.target.value }))
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0072FF] focus:border-transparent"
-              placeholder="Enter student name"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
+          {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Email</label>
             <input
               type="email"
+              name="email"
+              value={formData?.email || ""}
+              onChange={handleChange}
               required
-              value={formData.email}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, email: e.target.value }))
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0072FF] focus:border-transparent"
-              placeholder="Enter email address"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
+          {/* Phone */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Phone</label>
             <input
-              type="tel"
-              required
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, phone: e.target.value }))
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0072FF] focus:border-transparent"
-              placeholder="Enter phone number"
+              type="text"
+              name="phone"
+              value={formData?.phone || ""}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Photo
-            </label>
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <div
-                  className="w-20 h-20 rounded-full bg-gray-100 border-2 border-gray-200 flex items-center justify-center overflow-hidden shadow-sm"
-                  style={{ minWidth: "5rem", minHeight: "5rem" }}
-                >
-                  {photoPreview ? (
-                    <img
-                      src={photoPreview}
-                      alt="Student"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <svg
-                      className="w-10 h-10 text-gray-300"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4a4 4 0 014 4v1h1a2 2 0 012 2v7a2 2 0 01-2 2H7a2 2 0 01-2-2v-7a2 2 0 012-2h1V8a4 4 0 014-4z"
-                      />
-                    </svg>
-                  )}
-                  {photoPreview && (
-                    <button
-                      type="button"
-                      onClick={handleRemovePhoto}
-                      className="absolute -top-2 -right-2 bg-white border border-gray-300 rounded-full p-1 shadow hover:bg-gray-100 transition"
-                      title="Remove photo"
-                    >
-                      <svg
-                        className="w-4 h-4 text-gray-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileInputRef}
-                  onChange={handlePhotoChange}
-                  className="hidden"
-                  id="photo-upload"
-                />
-                <label
-                  htmlFor="photo-upload"
-                  className="inline-block px-4 py-2 bg-gradient-to-r from-[#0072FF] to-[#0C79FF] text-white rounded-md cursor-pointer hover:from-[#0061CC] hover:to-[#0B69CC] transition-all text-sm font-medium"
-                >
-                  {photoPreview ? "Change Photo" : "Upload Photo"}
-                </label>
-                <div className="text-xs text-gray-400 mt-1">
-                  JPG, PNG, or GIF. Max 2MB.
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex space-x-3 pt-4">
+          {/* Buttons */}
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              disabled={submitting || uploading}
+              className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {submitting ? "Saving..." : "Save Student"}
+            </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+              className="flex-1 bg-gray-300 text-gray-800 py-2 rounded-md hover:bg-gray-400"
             >
               Cancel
             </button>
-            <button
-              onClick={handleSubmit}
-              className="flex-1 px-4 py-2 bg-gradient-to-r from-[#0072FF] to-[#0C79FF] text-white rounded-md hover:from-[#0061CC] hover:to-[#0B69CC] transition-all"
-            >
-              {student ? "Update" : "Create"} Student
-            </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
-};
-
-export default StudentModal;
+}

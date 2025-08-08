@@ -1,7 +1,7 @@
 export default function Home() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen font-sans bg-white dark:bg-black">
-      <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center justify-center min-h-screen ">
+      {/* <div className="flex flex-col items-center gap-6">
         <svg
           width="80"
           height="80"
@@ -26,7 +26,8 @@ export default function Home() {
           We are working hard to bring you something amazing.<br />
           Please check back soon!
         </p>
-      </div>
+      </div> */}
+      HomePage
     </div>
   );
 }

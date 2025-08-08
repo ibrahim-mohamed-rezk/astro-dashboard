@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import StudentModal from "./components/StudntModal";
-import { getData } from "../../libs/axios/server";
+
+import { getData, postData, putData } from "../../libs/axios/server";
 import StudentsTable from "./components/StudentsTable";
 import Pagination from "../../components/ui/Pagination";
-
-// Students Table Component
 
 export default function StudentsPage() {
   const [students, setStudents] = useState([]);
@@ -15,28 +14,36 @@ export default function StudentsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [pagination, setPagination] = useState({ page: 1 });
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
     name: "",
     email: "",
     phone: "",
-    studentCode: "",
+  });
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    total: 0,
   });
 
+  // Fetch students from API
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await getData(
-        "students/filters",
-        { page: currentPage, limit: 15, ...filters },
-        {}
-      );
+      const response = await getData("/students", {
+        page: currentPage,
+        limit: 15,
+        ...filters,
+      });
       setStudents(response.data);
-      setPagination(response.pagination);
-    } catch (error) {
-      setError("Failed to fetch students data");
-      console.error("Error fetching students:", error);
+      setPagination({
+        currentPage: response.pagination.currentPage,
+        totalPages: response.pagination.totalPages,
+        total: response.pagination.total,
+      });
+    } catch (err) {
+      setError("Failed to load students. Please try again.");
+      console.error("Fetch students error:", err);
     } finally {
       setLoading(false);
     }
@@ -46,17 +53,19 @@ export default function StudentsPage() {
     fetchData();
   }, [currentPage, filters]);
 
-  // Handle student actions
+  // Open modal to add new student
   const handleAddStudent = () => {
     setEditingStudent(null);
     setIsModalOpen(true);
   };
 
+  // Open modal to edit existing student
   const handleEditStudent = (student) => {
     setEditingStudent(student);
     setIsModalOpen(true);
   };
 
+  // Handle pagination
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
@@ -75,36 +84,35 @@ export default function StudentsPage() {
     );
   }
 
-  console.log(filters);
-
   return (
-    <div className="space-y-6 p-2">
+    <div className="space-y-6 p-4">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div></div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Students</h1>
+          <p className="text-gray-600">
+            Manage student records {pagination.total > 0 && `(${pagination.total})`}
+          </p>
+        </div>
       </div>
 
-      {/* Search and Stats */}
+      {/* Search & Add Button */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
           <div className="relative">
             <input
               type="text"
-              placeholder="Search students by name, email, or code..."
-              value={
-                filters.name ||
-                filters.email ||
-                filters.phone ||
-                filters.studentCode
-              }
-              onChange={(e) =>
+              placeholder="Search by name, email, or phone..."
+              value={searchTerm}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchTerm(value);
                 setFilters({
-                  ...filters,
-                  name: e.target.value,
-                  email: e.target.value,
-                  phone: e.target.value,
-                  studentCode: e.target.value,
-                })
-              }
+                  name: value,
+                  email: value,
+                  phone: value,
+                });
+              }}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0072FF] focus:border-transparent"
             />
             <svg
@@ -148,11 +156,10 @@ export default function StudentsPage() {
         <div className="flex items-center justify-center min-h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0072FF]"></div>
         </div>
-      ) : students?.length > 0 ? (
+      ) : students.length > 0 ? (
         <StudentsTable
           students={students}
           onEdit={handleEditStudent}
-          feachData={fetchData}
         />
       ) : (
         <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
@@ -169,9 +176,7 @@ export default function StudentsPage() {
               d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
             />
           </svg>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No students found
-          </h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No students found</h3>
           <p className="text-gray-500 mb-4">
             {searchTerm
               ? "Try adjusting your search criteria"
@@ -188,13 +193,16 @@ export default function StudentsPage() {
         </div>
       )}
 
-      <Pagination
-        currentPage={pagination.currentPage}
-        totalPages={pagination.totalPages}
-        onPageChange={handlePageChange}
-      />
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <Pagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          onPageChange={handlePageChange}
+        />
+      )}
 
-      {/* Student Modal */}
+      {/* Modal */}
       <StudentModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -202,11 +210,7 @@ export default function StudentsPage() {
           setEditingStudent(null);
         }}
         student={editingStudent}
-        editingStudent={editingStudent}
-        setEditingStudent={setEditingStudent}
-        setIsModalOpen={setIsModalOpen}
         fetchData={fetchData}
-        studentId={editingStudent?._id}
       />
     </div>
   );

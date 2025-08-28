@@ -3,8 +3,8 @@ import axios from "axios";
 // Create an Axios instance
 const backendServer = axios.create({
   // baseURL: "https://hotel-booking-cf0a.onrender.com/api/",
-  baseURL: "http://localhost:4000/api/",
-  // baseURL: "https://astro-server-rose.vercel.app/api/",
+  // baseURL: "http://localhost:4000/api/",
+  baseURL: "https://astro-server-rose.vercel.app/api/",
   // baseURL: "http://localhost:8000/api/",
   headers: {
     'Content-Type': 'application/json'

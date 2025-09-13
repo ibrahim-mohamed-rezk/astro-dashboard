@@ -268,8 +268,10 @@ export default function StatisticsPage() {
             </h2>
             <p className="text-gray-600 mb-6">
               Delete statistic{" "}
-              <strong>"{isDeleting.title_en || isDeleting.title_ar}"</strong>?
-              This cannot be undone.
+              <strong>
+                &quot;{isDeleting.title_en || isDeleting.title_ar}&quot;
+              </strong>
+              ? This cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
               <button

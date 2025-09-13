@@ -133,8 +133,8 @@ const BestStudentsPage = () => {
   }, [showAddModal, allStudentsLoaded, loadAllStudents]);
 
   // Memoized rank utilities
-  const getRankIcon = useMemo(
-    () => (rank: number) => {
+  const getRankIcon = useMemo(function getRankIconFactory() {
+    const RankIcon = (rank: number) => {
       switch (rank) {
         case 1:
           return <FaCrown className="text-yellow-500" />;
@@ -145,9 +145,10 @@ const BestStudentsPage = () => {
         default:
           return <FaStar className="text-blue-500" />;
       }
-    },
-    []
-  );
+    };
+    RankIcon.displayName = "RankIcon";
+    return RankIcon;
+  }, []);
 
   const getRankBackground = useMemo(
     () => (rank: number) => {

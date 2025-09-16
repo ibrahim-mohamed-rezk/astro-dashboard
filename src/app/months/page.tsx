@@ -475,14 +475,6 @@ export default function MonthsPage() {
         });
       }
 
-      const datesToAdd = selectedDates.filter(
-        (selectedDate) =>
-          !existingDates.some(
-            (existingDate) =>
-              existingDate.toDateString() === selectedDate.toDateString()
-          )
-      );
-
       const datesToRemove = existingDates.filter(
         (existingDate) =>
           !selectedDates.some(
@@ -491,14 +483,7 @@ export default function MonthsPage() {
           )
       );
 
-      if (datesToAdd.length > 0) {
-        const dates = datesToAdd.map(formatDateForAPI);
-        await postData("/months/generate-weeks-days", {
-          monthId: isGeneratingDates,
-          dates,
-        });
-      }
-
+      // Remove unselected dates first
       if (datesToRemove.length > 0) {
         const dayIdsToRemove = [];
         const weekDayPairs = [];
@@ -531,6 +516,15 @@ export default function MonthsPage() {
         }
 
         await cleanupEmptyWeeks(isGeneratingDates);
+      }
+
+      // Always resend all selected dates (both new and existing ones)
+      if (selectedDates.length > 0) {
+        const dates = selectedDates.map(formatDateForAPI);
+        await postData("/months/generate-weeks-days", {
+          monthId: isGeneratingDates,
+          dates,
+        });
       }
 
       await fetchMonths();

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   getData,
   postData,
@@ -50,26 +50,26 @@ export default function UserPage() {
     performance: 7,
   });
 
+  const fetchUser = async () => {
+    try {
+      const res = await getData(`/users/${id}`);
+      if (res?.success && res.data?._id) {
+        setUser(res.data);
+      } else {
+        setError("User not found or invalid response.");
+      }
+    } catch (err) {
+      console.error("Error fetching user:", err);
+      setError(
+        "Failed to load user. The server might be starting up. Please try again later."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Fetch user data
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await getData(`/users/${id}`);
-        if (res?.success && res.data?._id) {
-          setUser(res.data);
-        } else {
-          setError("User not found or invalid response.");
-        }
-      } catch (err) {
-        console.error("Error fetching user:", err);
-        setError(
-          "Failed to load user. The server might be starting up. Please try again later."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUser();
   }, [id]);
 
@@ -271,18 +271,10 @@ export default function UserPage() {
     if (!confirm("Are you sure you want to delete this rating?")) return;
     setSubmitting(true);
     try {
-      const res = await deleteData(`/days/${day._id}/remove-user`, {
-        userId: id,
-      });
-      if (res?.success) {
-        const updatedUser = await getData(`/users/${id}`);
-        if (updatedUser?.success && updatedUser.data?._id) {
-          setUser(updatedUser.data);
-        }
-        toast.success("Rating deleted successfully!");
-      } else {
-        toast.error("Failed to delete rating. Please try again.");
-      }
+      await deleteData(`/days/${day._id}/remove-user/${id}`);
+
+      fetchUser();
+      toast.success("Rating deleted successfully!", day.id, id);
     } catch (err) {
       console.error("Error deleting rating:", err);
       toast.error("Error deleting rating. Please try again.");
@@ -1393,7 +1385,9 @@ function DayCard({ day, onAddRating, onEditRating, onDeleteRating }) {
 function RatingItem({ label, value, maxValue = null, isStatus = false }) {
   const getColorClass = (val, max) => {
     if (isStatus) {
-      return val === "✓" ? "text-green-700 bg-green-50" : "text-red-700 bg-red-50";
+      return val === "✓"
+        ? "text-green-700 bg-green-50"
+        : "text-red-700 bg-red-50";
     }
     const percentage = (val / max) * 100;
     if (percentage >= 80) return "text-green-700 bg-green-50";
@@ -1404,7 +1398,12 @@ function RatingItem({ label, value, maxValue = null, isStatus = false }) {
   return (
     <div className="flex justify-between items-center text-xs py-1 px-2 bg-gray-50 rounded border border-gray-200">
       <span className="text-gray-600 font-medium">{label}:</span>
-      <span className={`font-semibold px-2 py-0.5 rounded ${getColorClass(value, maxValue)}`}>
+      <span
+        className={`font-semibold px-2 py-0.5 rounded ${getColorClass(
+          value,
+          maxValue
+        )}`}
+      >
         {isStatus ? value : `${value}${maxValue ? `/${maxValue}` : ""}`}
       </span>
     </div>
